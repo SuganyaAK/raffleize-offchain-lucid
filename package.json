@@ -13,7 +13,9 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^20.12.7",
-    "typescript": "^5.4.5"
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
   },
   "dependencies": {
     "@anastasia-labs/lucid-cardano-fork": "^0.10.7"
