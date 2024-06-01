@@ -1,11 +1,5 @@
 import { Assets, Blockfrost, Lucid, MintingPolicy, PolicyId, TxHash, Unit, fromText, generateSeedPhrase, getAddressDetails, toUnit } from "@anastasia-labs/lucid-cardano-fork";
-//import script from './mynftminting.json' 
-//import assert from "assert";
-//import test from "node:test";
-//import { test } from 'vitest'
-//import type {mintNFT} from './createraffle.ts';
-
-
+import { getUtxoWithAssets } from "./Utils.js";
 
 export const lucid = await Lucid.new(new Blockfrost(
    "https://cardano-preview.blockfrost.io/api/v0",
@@ -16,16 +10,22 @@ export const lucid = await Lucid.new(new Blockfrost(
  //const api = await window.cardano.nami.enable();
  // Assumes you are in a browser environment
  //lucid.selectWallet(api);
- lucid.selectWalletFromSeed("damage laugh drive life gate expose camp spoon error uphold cry crush black blame rebuild film lake east keep army margin unlock toy memory");
- export const addr = await lucid.wallet.address();
+ //const seed = lucid.utils.generateSeedPhrase();
+ lucid.selectWalletFromSeed("absorb another vanish tonight blind dove odor female isolate other proof length shiver love crack plastic coffee ginger explain rally acid vapor glance another");
+ 
+ export const userAddr = await lucid.wallet.address();
+ console.log("Address", userAddr);
 
  export const { paymentCredential } = lucid.utils.getAddressDetails(
-   addr,
+   userAddr,
  );
 
- console.log("Address", addr);
+console.log("utxos at addr after minting",await lucid.utxosAt(userAddr));
+const userUtxos = await lucid.utxosAt(userAddr);
 
- /* const mintingPolicy: MintingPolicy = lucid.utils.nativeScriptFromJson(
+//["lovelace"]: 5000000n,
+/*
+const mintingPolicy: MintingPolicy = lucid.utils.nativeScriptFromJson(
    {
      type: "all",
      scripts: [
@@ -43,31 +43,29 @@ export const lucid = await Lucid.new(new Blockfrost(
  );
  console.log("Policy Id",policyId);
  
-  //export async function mintNFT(
-  // name: string,
- //): Promise<TxHash> {
-  
- const unit: Unit = policyId + fromText("coin");
- console.log("Asset Unit", unit);
- 
-   const tx = await lucid
-     .newTx()
-     .mintAssets({ [unit]: 1n })
-     .validTo(Date.now() + 100000)
-     .attachMintingPolicy(mintingPolicy)
-     .complete();
- 
-   const signedTx = await tx.sign().complete();
- 
-   const txHash = await signedTx.submit();
- 
-   //return txHash;
-// }
+ export async function mintNFT(
+  name: string,
+): Promise<TxHash> {
+  const unit: Unit = policyId + fromText(name);
 
+  const tx = await lucid
+    .newTx()
+    .mintAssets({ [unit]: 1n })
+    .payToAddress(userAddr,{lovelace : 10_000_000n})
+    .validTo(Date.now() + 100000)
+    .attachMintingPolicy(mintingPolicy)
+    .complete();
 
+  const signedTx = await tx.sign().complete();
 
- console.log ("Transaction hash",txHash); 
+  const txHash = await signedTx.submit();
 
- console.log("utxos at addr after minting",await lucid.utxosAt(addr));
- console.log("utxos at addr after minting",await lucid.wallet.getUtxos());
+  return txHash;
+}
+
+mintNFT("teststakevalue");
  */
+//console.log ("Transaction hash",txHash); 
+
+//console.log("utxos at addr after minting",await lucid.utxosAt(userAddr));
+

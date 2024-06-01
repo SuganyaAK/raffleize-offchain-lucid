@@ -1,0 +1,2 @@
+export const REFERENCE_TOKEN_LABEL = 100;
+export const NON_FUNGIBLE_TOKEN_LABEL = 222;
