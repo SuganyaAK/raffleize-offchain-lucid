@@ -78,7 +78,7 @@ export const TxOutReference = TxOutRefSchema as unknown as TxOutReference;
 
 
 export const RedeemerSchema = Data.Enum ([
-    Data.Object({ MintRaffle : RaffleConfigSchema /*, TxOutRefSchema*/ }),
+    Data.Object({ MintRaffle : RaffleConfigSchema /*, TxOutRefSchema*/ }), // 1. how to bring the tx out ref 
     Data.Object({ MintTicket : Data.Object({unAssetClass:(Data.Object({unCurrencySymbol:Data.Bytes()}),Data.Object({unTokenName:Data.Bytes()}))}) }), // change the data type of mintticket }),
 ]);
 

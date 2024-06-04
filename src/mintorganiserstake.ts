@@ -24,7 +24,7 @@ console.log("utxos at addr after minting",await lucid.utxosAt(userAddr));
 const userUtxos = await lucid.utxosAt(userAddr);
 
 //["lovelace"]: 5000000n,
-/*
+
 const mintingPolicy: MintingPolicy = lucid.utils.nativeScriptFromJson(
    {
      type: "all",
@@ -64,7 +64,7 @@ const mintingPolicy: MintingPolicy = lucid.utils.nativeScriptFromJson(
 }
 
 mintNFT("teststakevalue");
- */
+
 //console.log ("Transaction hash",txHash); 
 
 //console.log("utxos at addr after minting",await lucid.utxosAt(userAddr));
