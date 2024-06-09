@@ -1,21 +1,15 @@
-import { Assets, Blockfrost, Lucid, MintingPolicy, PolicyId, TxHash, Unit, fromText, generateSeedPhrase, getAddressDetails, toUnit } from "@anastasia-labs/lucid-cardano-fork";
-import { getUtxoWithAssets } from "./Utils.js";
-
-
-export const lucid = await Lucid.new(new Blockfrost(
-   "https://cardano-preview.blockfrost.io/api/v0",
-    "previewL7VRnBQHYkBR9rd6GrKvSzRuCQ7JgTml",
-  ),
- "Preview",);
-
- //const api = await window.cardano.nami.enable();
- // Assumes you are in a browser environment
- //lucid.selectWallet(api);
- //const seed = lucid.utils.generateSeedPhrase();
- lucid.selectWalletFromSeed("absorb another vanish tonight blind dove odor female isolate other proof length shiver love crack plastic coffee ginger explain rally acid vapor glance another");
- 
- export const userAddr = await lucid.wallet.address();
- console.log("Address", userAddr);
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.userAddr = exports.lucid = void 0;
+var lucid_cardano_fork_1 = require("@anastasia-labs/lucid-cardano-fork");
+exports.lucid = await lucid_cardano_fork_1.Lucid.new(new lucid_cardano_fork_1.Blockfrost("https://cardano-preview.blockfrost.io/api/v0", "previewL7VRnBQHYkBR9rd6GrKvSzRuCQ7JgTml"), "Preview");
+//const api = await window.cardano.nami.enable();
+// Assumes you are in a browser environment
+//lucid.selectWallet(api);
+//const seed = lucid.utils.generateSeedPhrase();
+exports.lucid.selectWalletFromSeed("absorb another vanish tonight blind dove odor female isolate other proof length shiver love crack plastic coffee ginger explain rally acid vapor glance another");
+exports.userAddr = await exports.lucid.wallet.address();
+console.log("Address", exports.userAddr);
 /*
  export const { paymentCredential } = lucid.utils.getAddressDetails(
    userAddr,
@@ -67,6 +61,4 @@ const mintingPolicy: MintingPolicy = lucid.utils.nativeScriptFromJson(
 mintNFT("teststakevalue");
 */
 //console.log ("Transaction hash",txHash); 
-
 //console.log("utxos at addr after minting",await lucid.utxosAt(userAddr));
-

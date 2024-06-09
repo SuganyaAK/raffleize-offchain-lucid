@@ -18,16 +18,16 @@ import { Assets, Data, Kind, UTxO } from "@anastasia-labs/lucid-cardano-fork"
   deriving (Generic, Eq) */
 
 
-  export const ScriptHashSchema = Data.Object({
+  /* export const ScriptHashSchema = Data.Object({
     getScriptHash : Data.Bytes()
-  });
+  }); */
 
   const RaffleParamSchema = Data.Object({
     rMaxNoOfTickets : Data.Integer() 
   , rMinRevealingWindow : Data.Integer() 
   , rMinTicketPrice :Data.Integer() 
-  , rRaffleValidatorHash : ScriptHashSchema 
-  , rTicketValidatorHash : ScriptHashSchema 
+  , rRaffleValidatorHash : Data.Object({ inline : Data.Bytes()})
+  , rTicketValidatorHash : Data.Object({ inline : Data.Bytes()})
   , rTicketCollateral :Data.Integer() 
   , rRaffleCollateral :Data.Integer()
   });
@@ -76,9 +76,19 @@ export const TxOutRefSchema = Data.Object({
 export type TxOutReference = Data.Static<typeof TxOutRefSchema>;
 export const TxOutReference = TxOutRefSchema as unknown as TxOutReference;
 
+/*
+data RaffleizeMintingReedemer
+  = MintRaffle RaffleConfig TxOutRef
+  | MintTicket AssetClass
+  | Burn AssetClass
+  deriving (Generic)
+
+*/
 
 export const RedeemerSchema = Data.Enum ([
-    Data.Object({ MintRaffle : RaffleConfigSchema /*, TxOutRefSchema*/ }), // 1. how to bring the tx out ref 
+  Data.Object({ MintRaffle : Data.Object(RaffleConfigSchema)} ),
+  //Data.Object({ MintRaffle : Data.Object({raffleconf : RaffleConfigSchema , txoutref : TxOutRefSchema} ) }),
+    //Data.Object({ MintRaffle : RaffleConfigSchema , TxOutRefSchema }), // 1. how to bring the tx out ref 
     Data.Object({ MintTicket : Data.Object({unAssetClass:(Data.Object({unCurrencySymbol:Data.Bytes()}),Data.Object({unTokenName:Data.Bytes()}))}) }), // change the data type of mintticket }),
 ]);
 
