@@ -2,7 +2,7 @@
 import { Constr, Data, PolicyId, Script, Unit, applyParamsToScript, fromHex, fromText, sha256, toHex, toUnit } from '@anastasia-labs/lucid-cardano-fork';
 import script from '../src/raffleizemintingpolicy.json';
 import {lucid, userAddr} from '../src/mintorganiserstake.js'
-import { RaffleConfig, RaffleConfigSchema, RaffleDatum, RaffleParam, RaffleStateData, Redeemer, TxOutRefSchema, TxOutReference, getUtxoWithAssets } from './Utils.js';
+import { MetadataRaffle, RaffleConfig, RaffleConfigSchema, RaffleDatum, RaffleParam, RaffleStateData, Redeemer, TxOutRefSchema, TxOutReference, getUtxoWithAssets } from './Utils.js';
 import { NON_FUNGIBLE_TOKEN_LABEL, REFERENCE_TOKEN_LABEL, raffleDescription, raffleImageURI, raffleName } from './common/constants.js';
 import { blake2b } from 'blakejs';
 import {raffleizeValidatorHash} from '../src/rafflevalidatorhash.js'
@@ -87,12 +87,6 @@ const txoutref : TxOutReference = {
   txOutRefIdx: BigInt(outputIndex)
 };
 
-const redeemer = Data.to (,Redeemer);
-//const redeemer = Data.to ({MintRaffle :{ x: rafconfig1,y: txoutref}},Redeemer);
-
-console.log("Mint Raffle Redeemer:", redeemer);
-
-
 const datumStateData : RaffleStateData = { 
   rRaffleID : {unAssetClass: {unCurrencySymbol : policyId,//"dc7fc077e20b22150409f2c991161536acfd4ed1a0fecacd7a6fb87d",
                               unTokenName : tokenName }}//fromText("teststakevalue")}} // not the stake , rafflemintingpolicyscript is the uncucrrencysymbol
@@ -104,14 +98,6 @@ const datumStateData : RaffleStateData = {
             , rTicketValidatorHash : {inline :ticketValidatorHash.script}
             , rTicketCollateral :3_000_000n
             , rRaffleCollateral :3_000_000n}
-        /*    { rMaxNoOfTickets = 20
-    , rMinRevealingWindow = 6_000 --- ^ Miliseconds
-    , rMinTicketPrice = 3_000_000 --- ^ Lovelaces
-    , rRaffleValidatorHash = raffleizeValidatorHashPlutus
-    , rTicketValidatorHash = ticketValidatorHashPlutus
-    , rTicketCollateral = 3_000_000 --- ^ Lovelaces
-    , rRaffleCollateral = 3_000_000 --- ^ Lovelaces
-    } */
    
 , rConfig : rafconfig1
 , rSoldTickets :  0n
@@ -122,35 +108,56 @@ const datumStateData : RaffleStateData = {
 
 console.log("Raffle state Data", datumStateData);
 
+const cipmetadata : MetadataRaffle = 
+  new Map([["description", "raffleDescription"]
+    , ["image", "raffleImageURI"]
+    , ["name", "raffleName"]]);
+
+const metadata = Data.from(Data.to(cipmetadata,MetadataRaffle),MetadataRaffle);
+console.log("CIP metadata",metadata);
+
 const raffledatum : RaffleDatum = {
-  metadata : new Map([["description", raffleDescription]
-    , ["image", raffleImageURI]
-    , ["name", raffleName]])
- ,version : 1n
+  //metadata : cipmetadata,
+ version : 1n
  ,extra : datumStateData
 };
 
+const metadatum = Data.to(new Constr(0, [cipmetadata]));
 //const metadatum = Data.to(raffledatum,RaffleDatum);
 
-console.log("RaffleDatum", raffledatum);
+console.log("RaffleDatum", metadatum);
 
-const tx = await lucid
+const redeemer : Redeemer = {MintRaffle:{config: rafconfig1,outref : txoutref}};
+
+const newRedeemer = Data.to(redeemer,Redeemer);
+
+console.log("Redeemer",newRedeemer);
+
+console.log("utxos at user addr", await lucid.utxosAt(userAddr))
+/*
+ const tx = await lucid
   .newTx()
   .collectFrom([selectedUtxo])  // utxo with raffle stake
   .collectFrom([collateral]) // utxo with lovelace = 10_000_000n
-  .mintAssets({[userNFT]: 1n, [refNFT]: 1n }, redeemer) // minting user NFT and ref NFT
+  .mintAssets({[userNFT]: 1n, [refNFT]: 1n }, newRedeemer) // minting user NFT and ref NFT
   .attachMintingPolicy(raffleizemintingpolicyScript)
-  //.payToAddress(userAddr, { [userNFT]: 1n })
-  // .payToContract(raffleizemintingpolicyvaladdr, { inline: metadatum }, {[refNFT]: 1n,
-  // })
+  .payToAddress(userAddr, { [userNFT]: 1n })
+   .payToContract(raffleizemintingpolicyvaladdr, { inline: metadatum }, {[refNFT]: 1n,
+   })
   //.addSigner(issuerAddr)
   .addSigner(userAddr)
   .complete();
 
-  console.log("txoutput", tx);
+  console.log("txoutput", tx); 
 
+  const signedTx = await tx.sign().complete();
 
-/*   const tx = await lucid
+  const submittedtxHash = await signedTx.submit();
+
+  console.log("submitted tx hash",submittedtxHash);
+
+/*
+  const tx = await lucid
   .newTx()
   .collectFrom([selectedUtxo])
   .mintAssets({ [userNFT]: 1n, [refNFT]: 1n }, mintRdmr)
@@ -166,9 +173,9 @@ const tx = await lucid
   .complete({
     change: { address: userAddr },
     coinSelection: false, // Setting to false to avoid using distributor funds
-  }); */
-
-/*  const signedTx = await tx.sign().complete();
+  }); 
+*/
+/*   const signedTx = await tx.sign().complete();
 
   const submittedtxHash = await signedTx.submit();
   
@@ -177,8 +184,8 @@ const tx = await lucid
   console.log(`Successfully minted tokens with
   policyId: ${policyId},
   tokenName: ${tokenName},
-  txHash: ${submittedtxHash}`);
+  txHash: ${submittedtxHash}`); */
  
 
-*/
+
 

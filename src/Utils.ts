@@ -84,9 +84,10 @@ data RaffleizeMintingReedemer
   deriving (Generic)
 
 */
+//Data.Object({ Up: Data.Object({ x: Data.Integer(), y: Data.Bytes() }) }),
 
 export const RedeemerSchema = Data.Enum ([
-  Data.Object({ MintRaffle : Data.Object(RaffleConfigSchema)} ),
+  Data.Object({ MintRaffle : Data.Object({config:RaffleConfigSchema,outref :TxOutRefSchema})} ),
   //Data.Object({ MintRaffle : Data.Object({raffleconf : RaffleConfigSchema , txoutref : TxOutRefSchema} ) }),
     //Data.Object({ MintRaffle : RaffleConfigSchema , TxOutRefSchema }), // 1. how to bring the tx out ref 
     Data.Object({ MintTicket : Data.Object({unAssetClass:(Data.Object({unCurrencySymbol:Data.Bytes()}),Data.Object({unTokenName:Data.Bytes()}))}) }), // change the data type of mintticket }),
@@ -123,8 +124,8 @@ data RaffleStateData = RaffleStateData
 
   export const MetadataSchema = Data.Map(Data.Bytes(),Data.Bytes());
 
-  export type Metadata= Data.Static<typeof MetadataSchema>;
-  export const Metadata = MetadataSchema as unknown as Metadata;
+  export type MetadataRaffle = Data.Static<typeof MetadataSchema>;
+  export const MetadataRaffle = MetadataSchema as unknown as MetadataRaffle;
 
   export const RaffleDatumSchema = Data.Object({
     metadata : MetadataSchema
