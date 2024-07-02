@@ -1,12 +1,13 @@
 
-import { Constr, Data, PolicyId, Script, Unit, applyParamsToScript, fromHex, fromText, sha256, toHex, toUnit } from '@anastasia-labs/lucid-cardano-fork';
+import { Constr, Data, Emulator, Lucid, MintingPolicy, PolicyId, Script, TxHash, Unit, applyParamsToScript, fromHex, fromText, sha256, toHex, toUnit } from '@anastasia-labs/lucid-cardano-fork';
 import script from '../src/raffleizemintingpolicy.json';
-import {lucid, userAddr} from '../src/mintorganiserstake.js'
-import { MetadataRaffle, RaffleConfig, RaffleConfigSchema, RaffleDatum, RaffleParam, RaffleStateData, Redeemer, TxOutRefSchema, TxOutReference, getUtxoWithAssets } from './Utils.js';
+//import { userAddr} from '../src/mintorganiserstake.js'
+import {  RaffleConfig, RaffleConfigSchema, RaffleDatum, RaffleParam, RaffleStateData, Redeemer, TxOutRefSchema, TxOutReference, generateAccountSeedPhrase, getUtxoWithAssets } from './Utils.js';
 import { NON_FUNGIBLE_TOKEN_LABEL, REFERENCE_TOKEN_LABEL, raffleDescription, raffleImageURI, raffleName } from './common/constants.js';
 import { blake2b } from 'blakejs';
 import {raffleizeValidatorHash} from '../src/rafflevalidatorhash.js'
 import {ticketValidatorHash} from '../src/ticketvalidatorhash.js'
+import myNFTScript from "../src/mynftminting.json"
 
 /*onst raffleparam : RaffleParam = {rMaxNoOfTickets : 20n
   , rMinRevealingWindow : 60_000n
@@ -18,6 +19,60 @@ import {ticketValidatorHash} from '../src/ticketvalidatorhash.js'
 
 console.log("Raffle parameters", raffleparam); // raffle param is parameterized
 */
+const ownerAddr = await generateAccountSeedPhrase({ lovelace: 20_000_000n });
+console.log("Owner ADdress", ownerAddr);
+const emulator = new Emulator([ownerAddr]);
+
+const lucid = await Lucid.new(emulator);
+lucid.selectWalletFromSeed(ownerAddr.seedPhrase);
+export const { paymentCredential } = lucid.utils.getAddressDetails(
+  ownerAddr.address,
+);
+
+const mintingPolicy: MintingPolicy = lucid.utils.nativeScriptFromJson(
+  {
+    type: "all",
+    scripts: [
+      { type: "sig", keyHash: paymentCredential?.hash! },
+      {
+        type: "before",
+        slot: lucid.utils.unixTimeToSlot(Date.now() + 1000000),
+      },
+    ],
+  },
+);
+
+const myNFTMintingPolicyId: PolicyId = lucid.utils.mintingPolicyToId(
+  mintingPolicy,
+);
+
+export async function mintNFT(
+  name: string,
+): Promise<{ unit: Unit; }> {
+  const unit: Unit = myNFTMintingPolicyId + fromText(name);
+
+  const tx = await lucid
+    .newTx()
+    .mintAssets({ [unit]: 1n })
+    .validTo(Date.now() + 100000)
+    .attachMintingPolicy(mintingPolicy)
+    .complete();
+
+  const signedTx = await tx.sign().complete();
+
+  const txHash = await signedTx.submit();
+
+  return { unit};
+
+  
+}
+
+const returnFn = await mintNFT("teststakevalue");
+
+emulator.awaitBlock(20);
+
+console.log("Function returned values",returnFn);
+
 const raffleizemintingpolicyScript : Script = {
     type : "PlutusV2",
     script : script.cborHex//applyParamsToScript(script.cborHex,[Data.to(raffleparam,RaffleParam)]), // can use the .plutus file directly, no need to create raffle param
@@ -27,15 +82,16 @@ const raffleizemintingpolicyvaladdr = lucid.utils.validatorToAddress(raffleizemi
 
 console.log("Raffle minting policy address",raffleizemintingpolicyvaladdr);
 
-console.log("Utxos at organiser address",await lucid.utxosAt(userAddr));
+console.log("Utxos at organiser address",await lucid.utxosAt(ownerAddr.address));
 
-const userUtxos = await lucid.utxosAt(userAddr);
+const userUtxos = await lucid.utxosAt(ownerAddr.address);
 
-const selectedUtxo = getUtxoWithAssets(userUtxos, { ["dc7fc077e20b22150409f2c991161536acfd4ed1a0fecacd7a6fb87d746573747374616b6576616c7565"]: 1n });
+const selectedUtxo =await lucid.utxoByUnit(returnFn.unit);
+// getUtxoWithAssets(userUtxos, { ["dc7fc077e20b22150409f2c991161536acfd4ed1a0fecacd7a6fb87d746573747374616b6576616c7565"]: 1n });
 // use this selected utxo to create the hash 
 
 console.log("Selected UTXO", selectedUtxo);
-const collateral = getUtxoWithAssets(userUtxos,{["lovelace"]:10_000_000n});
+const collateral = getUtxoWithAssets(userUtxos,{["lovelace"]:5_000_000n});
 
  const txHash = selectedUtxo.txHash;
  const txHash256 = blake2b(fromHex(txHash));
@@ -52,18 +108,18 @@ const collateral = getUtxoWithAssets(userUtxos,{["lovelace"]:10_000_000n});
   
   console.log("Token name",tokenName);
 
-const policyId: PolicyId = lucid.utils.mintingPolicyToId(
+const raffleizemintingpolicyId: PolicyId = lucid.utils.mintingPolicyToId(
     raffleizemintingpolicyScript,
   );
 
   const refNFT = toUnit(
-    policyId,
+    raffleizemintingpolicyId,
     tokenName, // hash of the utxoref which is used as the stake (input) , similar to seedTxOutRef
     REFERENCE_TOKEN_LABEL,
   );
   
   const userNFT = toUnit(
-    policyId,
+    raffleizemintingpolicyId,
     tokenName, 
     NON_FUNGIBLE_TOKEN_LABEL// 1. to get the txouterf, 2. hash ,3. crete  a tokenname with that hash
 );
@@ -88,7 +144,7 @@ const txoutref : TxOutReference = {
 };
 
 const datumStateData : RaffleStateData = { 
-  rRaffleID : {unAssetClass: {unCurrencySymbol : policyId,//"dc7fc077e20b22150409f2c991161536acfd4ed1a0fecacd7a6fb87d",
+  rRaffleID : {unAssetClass: {unCurrencySymbol : raffleizemintingpolicyId,//"dc7fc077e20b22150409f2c991161536acfd4ed1a0fecacd7a6fb87d",
                               unTokenName : tokenName }}//fromText("teststakevalue")}} // not the stake , rafflemintingpolicyscript is the uncucrrencysymbol
                               // tokenname : refnft and usernft's token name
 , rParam :  {rMaxNoOfTickets : 20n
@@ -108,22 +164,17 @@ const datumStateData : RaffleStateData = {
 
 console.log("Raffle state Data", datumStateData);
 
-const cipmetadata : MetadataRaffle = 
-  new Map([["description", "raffleDescription"]
-    , ["image", "raffleImageURI"]
-    , ["name", "raffleName"]]);
-
-const metadata = Data.from(Data.to(cipmetadata,MetadataRaffle),MetadataRaffle);
-console.log("CIP metadata",metadata);
 
 const raffledatum : RaffleDatum = {
-  //metadata : cipmetadata,
- version : 1n
+  metadata : new Map([[fromText("description"), fromText(raffleDescription)]
+              , [fromText("image"), fromText(raffleImageURI)]
+              , [fromText("name"), fromText(raffleName)]])
+ ,version : 1n
  ,extra : datumStateData
 };
 
-const metadatum = Data.to(new Constr(0, [cipmetadata]));
-//const metadatum = Data.to(raffledatum,RaffleDatum);
+
+const metadatum = Data.to(raffledatum,RaffleDatum);
 
 console.log("RaffleDatum", metadatum);
 
@@ -133,19 +184,20 @@ const newRedeemer = Data.to(redeemer,Redeemer);
 
 console.log("Redeemer",newRedeemer);
 
-console.log("utxos at user addr", await lucid.utxosAt(userAddr))
-/*
+console.log("utxos at user addr", await lucid.utxosAt(ownerAddr.address))
+
+
  const tx = await lucid
   .newTx()
   .collectFrom([selectedUtxo])  // utxo with raffle stake
   .collectFrom([collateral]) // utxo with lovelace = 10_000_000n
   .mintAssets({[userNFT]: 1n, [refNFT]: 1n }, newRedeemer) // minting user NFT and ref NFT
   .attachMintingPolicy(raffleizemintingpolicyScript)
-  .payToAddress(userAddr, { [userNFT]: 1n })
-   .payToContract(raffleizemintingpolicyvaladdr, { inline: metadatum }, {[refNFT]: 1n,
+  .payToAddress(ownerAddr.address, { [userNFT]: 1n })
+  .payToContract(raffleizemintingpolicyvaladdr, { inline: metadatum }, {[refNFT]: 1n,
    })
   //.addSigner(issuerAddr)
-  .addSigner(userAddr)
+  .addSigner(ownerAddr.address)
   .complete();
 
   console.log("txoutput", tx); 

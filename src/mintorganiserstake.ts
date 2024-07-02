@@ -1,7 +1,7 @@
 import { Assets, Blockfrost, Lucid, MintingPolicy, PolicyId, TxHash, Unit, fromText, generateSeedPhrase, getAddressDetails, toUnit } from "@anastasia-labs/lucid-cardano-fork";
 import { getUtxoWithAssets } from "./Utils.js";
 
-
+/*
 export const lucid = await Lucid.new(new Blockfrost(
    "https://cardano-preview.blockfrost.io/api/v0",
     "previewL7VRnBQHYkBR9rd6GrKvSzRuCQ7JgTml",

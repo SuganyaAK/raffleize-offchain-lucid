@@ -12,13 +12,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@anastasia-labs/lucid-cardano-fork": "^0.10.7",
     "@types/node": "^20.12.7",
     "tsx": "^4.7.2",
     "typescript": "^5.4.5",
     "vitest": "^1.5.0"
   },
   "dependencies": {
-    "@anastasia-labs/lucid-cardano-fork": "^0.10.7",
     "blakejs": "^1.2.1"
   }
 }

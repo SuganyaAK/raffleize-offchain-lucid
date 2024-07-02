@@ -1,4 +1,4 @@
-import { Assets, Data, Kind, UTxO } from "@anastasia-labs/lucid-cardano-fork"
+import { Assets, Data, Kind, Lucid, UTxO, generateSeedPhrase } from "@anastasia-labs/lucid-cardano-fork"
 
 /* data RaffleizeMintingReedemer
   = MintRaffle RaffleConfig TxOutRef
@@ -22,6 +22,17 @@ import { Assets, Data, Kind, UTxO } from "@anastasia-labs/lucid-cardano-fork"
     getScriptHash : Data.Bytes()
   }); */
 
+  export const generateAccountSeedPhrase = async (assets: Assets) => {
+    const seedPhrase = generateSeedPhrase();
+    return {
+      seedPhrase,
+      address: await ( await Lucid.new(undefined, "Custom"))
+        .selectWalletFromSeed(seedPhrase)
+        .wallet.address(),
+      assets,
+    };
+  };
+  
   const RaffleParamSchema = Data.Object({
     rMaxNoOfTickets : Data.Integer() 
   , rMinRevealingWindow : Data.Integer() 
@@ -122,15 +133,23 @@ data RaffleStateData = RaffleStateData
   export type RaffleStateData = Data.Static<typeof RaffleStateDataSchema>;
   export const RaffleStateData = RaffleStateDataSchema as unknown as RaffleStateData;
 
-  export const MetadataSchema = Data.Map(Data.Bytes(),Data.Bytes());
+  //export const MetadataSchema = Data.Map(Data.Bytes(),Data.Bytes());
 
-  export type MetadataRaffle = Data.Static<typeof MetadataSchema>;
-  export const MetadataRaffle = MetadataSchema as unknown as MetadataRaffle;
+  //export type MetadataRaffle = Data.Static<typeof MetadataSchema>;
+  //export const MetadataRaffle = MetadataSchema as unknown as MetadataRaffle;
 
   export const RaffleDatumSchema = Data.Object({
-    metadata : MetadataSchema
-    ,version : Data.Integer()
-    ,extra : RaffleStateDataSchema
+    metadata : Data.Map(Data.Bytes(),Data.Bytes()),
+    version : Data.Integer()
+    ,extra : Data.Object({
+      rRaffleID : Data.Object({unAssetClass : Data.Object({unCurrencySymbol: Data.Bytes(), unTokenName: Data.Bytes()})})
+    , rParam : RaffleParamSchema
+    , rConfig : RaffleConfigSchema
+    , rSoldTickets : Data.Integer() 
+    , rRevealedTickets : Data.Integer()
+    , rRefundedTickets : Data.Integer()
+    , rRandomSeed : Data.Integer()
+    })
   });
 
   export type RaffleDatum= Data.Static<typeof RaffleDatumSchema>;
